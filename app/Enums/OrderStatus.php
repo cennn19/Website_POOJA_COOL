@@ -9,6 +9,7 @@ enum OrderStatus: string
     case DISETUJUI = 'disetujui';
     case DITOLAK = 'ditolak';
     case SELESAI = 'selesai';
+    case DIBATALKAN = 'dibatalkan';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum OrderStatus: string
             self::DISETUJUI => 'Disetujui',
             self::DITOLAK => 'Ditolak',
             self::SELESAI => 'Selesai',
+            self::DIBATALKAN => 'Dibatalkan',
         };
     }
 
@@ -29,7 +31,23 @@ enum OrderStatus: string
             self::DISETUJUI => 'success',
             self::DITOLAK => 'danger',
             self::SELESAI => 'primary',
+            self::DIBATALKAN => 'neutral',
         };
+    }
+
+    /**
+     * Status yang dianggap sudah tidak aktif (kode unik boleh dipakai ulang).
+     *
+     * @return array<self>
+     */
+    public static function inactive(): array
+    {
+        return [self::SELESAI, self::DIBATALKAN];
+    }
+
+    public function isActive(): bool
+    {
+        return ! in_array($this, self::inactive(), true);
     }
 
     /**

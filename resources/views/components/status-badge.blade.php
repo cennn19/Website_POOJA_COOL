@@ -9,51 +9,50 @@
     $configs = [
         'menunggu_pembayaran' => [
             'label' => 'Menunggu Pembayaran',
-            'bg' => 'bg-neutral-100 text-neutral-800 border-neutral-300',
-            'dot' => 'bg-neutral-500',
-            'icon' => 'clock',
+            'bg' => 'bg-slate text-paper',
+            'dot' => 'bg-paper/70',
         ],
         'menunggu_verifikasi' => [
             'label' => 'Menunggu Verifikasi',
-            'bg' => 'bg-amber-50 text-warning-500 border-amber-300',
-            'dot' => 'bg-warning-500',
-            'icon' => 'hourglass',
+            'bg' => 'bg-st-pending text-paper',
+            'dot' => 'bg-paper/70',
         ],
         'disetujui' => [
             'label' => 'Disetujui',
-            'bg' => 'bg-emerald-50 text-success-600 border-emerald-300',
-            'dot' => 'bg-success-600',
-            'icon' => 'check-circle',
+            'bg' => 'bg-st-approved text-paper',
+            'dot' => 'bg-paper/70',
         ],
         'ditolak' => [
             'label' => 'Ditolak',
-            'bg' => 'bg-rose-50 text-danger-600 border-rose-300',
-            'dot' => 'bg-danger-600',
-            'icon' => 'x-circle',
+            'bg' => 'bg-st-rejected text-paper',
+            'dot' => 'bg-paper/70',
+        ],
+        'dibatalkan' => [
+            'label' => 'Dibatalkan',
+            'bg' => 'bg-line text-ink',
+            'dot' => 'bg-ink-mute',
         ],
         'selesai' => [
             'label' => 'Selesai',
-            'bg' => 'bg-primary-50 text-primary-700 border-primary-300',
-            'dot' => 'bg-primary-600',
-            'icon' => 'check-badge',
+            'bg' => 'bg-ink text-paper',
+            'dot' => 'bg-paper/70',
         ],
     ];
 
     $cfg = $configs[$statusValue] ?? [
         'label' => ucfirst(str_replace('_', ' ', $statusValue)),
-        'bg' => 'bg-neutral-100 text-neutral-800 border-neutral-300',
-        'dot' => 'bg-neutral-500',
-        'icon' => 'info',
+        'bg' => 'bg-slate text-paper',
+        'dot' => 'bg-paper/70',
     ];
 
     $sizeClasses = match ($size) {
-        'sm' => 'px-2.5 py-0.5 text-xs',
-        'lg' => 'px-3.5 py-1.5 text-sm',
-        default => 'px-3 py-1 text-xs',
+        'sm' => 'px-2 py-0.5 text-[10px]',
+        'lg' => 'px-3.5 py-1 text-xs',
+        default => 'px-2.5 py-1 text-[11px]',
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 font-medium rounded-full border {$cfg['bg']} {$sizeClasses}"]) }}>
+<span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 font-medium uppercase tracking-wider rounded-full {$cfg['bg']} {$sizeClasses} select-none"]) }}>
     <span class="w-1.5 h-1.5 rounded-full {{ $cfg['dot'] }} shrink-0"></span>
     <span>{{ $cfg['label'] }}</span>
 </span>

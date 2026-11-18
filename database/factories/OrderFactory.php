@@ -29,6 +29,7 @@ class OrderFactory extends Factory
             'phone' => '08'.fake()->numerify('##########'),
             'address' => fake()->address(),
             'schedule_date' => now()->addDays(2)->toDateString(),
+            'sesi' => 'pagi',
             'notes' => fake()->sentence(),
             'subtotal' => $subtotal,
             'unique_code' => $uniqueCode,

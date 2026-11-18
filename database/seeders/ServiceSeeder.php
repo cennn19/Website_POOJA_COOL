@@ -2,127 +2,109 @@
 
 namespace Database\Seeders;
 
-use App\Enums\ServiceType;
+use App\Models\KategoriLayanan;
 use App\Models\Service;
 use Illuminate\Database\Seeder;
 
+/**
+ * 5 kategori + 16 jenis pekerjaan Pooja Cool Prima (sumber: datausaha.md).
+ *
+ * Harga belum diketahui, jadi diisi 0. Layanan berharga 0 TIDAK tampil di website
+ * dan tidak bisa dipesan sampai admin mengisi harganya di halaman Layanan & Harga.
+ *
+ * Seeder aman dijalankan ulang: data yang sudah ada (termasuk harga yang sudah
+ * diisi admin) tidak ditimpa.
+ */
 class ServiceSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $services = [
-            // Paket
-            [
-                'name' => 'Paket Cuci AC Hemat (2 Unit)',
-                'slug' => 'paket-cuci-ac-hemat-2-unit',
-                'type' => ServiceType::PACKAGE,
-                'price' => 120000,
-                'description' => 'Pembersihan unit indoor dan outdoor untuk 2 unit AC split, pembersihan filter, semprot drainase, serta pengecekan suhu.',
-                'is_active' => true,
-                'sort_order' => 1,
-            ],
-            [
-                'name' => 'Paket Cuci Komplit + Tambah Freon (1 Unit)',
-                'slug' => 'paket-cuci-komplit-tambah-freon-1-unit',
-                'type' => ServiceType::PACKAGE,
-                'price' => 210000,
-                'description' => 'Cuci menyeluruh evaporator & kondensor plus penambahan freon R32/R410A hingga tekanan optimal standar pabrik.',
-                'is_active' => true,
-                'sort_order' => 2,
-            ],
-            [
-                'name' => 'Paket Overhaul / Turun Unit Total',
-                'slug' => 'paket-overhaul-turun-unit-total',
-                'type' => ServiceType::PACKAGE,
-                'price' => 450000,
-                'description' => 'Pembongkaran total indoor, cuci kimia khusus kerak jamur dan debu tebal, flushing pipa pembuangan, dan vakum ulang.',
-                'is_active' => true,
-                'sort_order' => 3,
-            ],
-            [
-                'name' => 'Paket Perawatan Komersial / Kantor (4 Unit)',
-                'slug' => 'paket-perawatan-komersial-kantor-4-unit',
-                'type' => ServiceType::PACKAGE,
-                'price' => 260000,
-                'description' => 'Perawatan berkala AC split/cassette ruko & kantor. Cek kelistrikan, arus ampere, dan kebersihan sistem secara menyeluruh.',
-                'is_active' => true,
-                'sort_order' => 4,
-            ],
+        foreach ($this->katalog() as $urutanKategori => $kategori) {
+            $model = KategoriLayanan::firstOrCreate(
+                ['slug' => $kategori['slug']],
+                [
+                    'nama' => $kategori['nama'],
+                    'urutan' => $urutanKategori + 1,
+                    'catatan_harga' => $kategori['catatan_harga'],
+                    'aktif' => true,
+                ],
+            );
 
-            // Satuan
+            foreach ($kategori['pekerjaan'] as $urutan => [$slug, $nama, $satuan, $hargaMulai]) {
+                Service::firstOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'kategori_layanan_id' => $model->id,
+                        'name' => $nama,
+                        'type' => 'unit',
+                        'satuan' => $satuan,
+                        'price' => 0, // TODO: harga asli belum ada, diisi admin lewat Layanan & Harga
+                        'harga_mulai' => $hargaMulai,
+                        'is_active' => true,
+                        'sort_order' => $urutan + 1,
+                    ],
+                );
+            }
+        }
+    }
+
+    /**
+     * @return array<int, array{nama: string, slug: string, catatan_harga: ?string, pekerjaan: array<int, array{0: string, 1: string, 2: string, 3: bool}>}>
+     */
+    private function katalog(): array
+    {
+        return [
             [
-                'name' => 'Cuci AC Split (0.5 - 2 PK)',
-                'slug' => 'cuci-ac-split-05-2-pk',
-                'type' => ServiceType::UNIT,
-                'price' => 65000,
-                'description' => 'Cuci filter, evaporator indoor, kipas blower, dan kondensor outdoor. Termasuk cek kebocoran dan suhu dingin.',
-                'is_active' => true,
-                'sort_order' => 10,
+                'nama' => 'Cleaning AC',
+                'slug' => 'cleaning-ac',
+                'catatan_harga' => null,
+                'pekerjaan' => [
+                    ['cleaning-ac-split-05-1-pk', 'AC Split 0,5–1 PK', 'unit', false],
+                    ['cleaning-ac-split-15-2-pk', 'AC Split 1,5–2 PK', 'unit', false],
+                    ['cleaning-ac-split-cassette-standing-floor', 'AC Split/Cassette/Standing Floor', 'unit', false],
+                ],
             ],
             [
-                'name' => 'Tambah Freon R32 / R410A',
-                'slug' => 'tambah-freon-r32-r410a',
-                'type' => ServiceType::UNIT,
-                'price' => 150000,
-                'description' => 'Pengisian tambahan refrigeran ramah lingkungan R32 / R410A untuk AC yang kurang dingin.',
-                'is_active' => true,
-                'sort_order' => 11,
+                'nama' => 'Pasang AC (Lokasi Standar)',
+                'slug' => 'pasang-ac-lokasi-standar',
+                'catatan_harga' => 'Harga untuk lokasi standar dengan pipa sampai 3 meter. Kelebihan pipa dihitung per meter. Tarif dapat menyesuaikan kondisi lokasi pemasangan dan dikonfirmasi teknisi sebelum pekerjaan dimulai.',
+                'pekerjaan' => [
+                    ['pemasangan-ac-split-05-1-pk', 'Pemasangan AC Split 0,5–1 PK', 'unit', true],
+                    ['pemasangan-ac-split-15-2-pk', 'Pemasangan AC Split 1,5–2 PK', 'unit', true],
+                    ['pemasangan-standing-floor-cassette', 'Pemasangan Standing Floor-Cassette', 'unit', true],
+                    ['bongkar-ac-split', 'Bongkar AC Split', 'unit', true],
+                    ['instalasi-pipa-lebih-dari-3-meter', 'Instalasi pipa lebih dari 3 meter', 'meter', false],
+                ],
             ],
             [
-                'name' => 'Isi Freon Full dari Kosong R32 / R410A',
-                'slug' => 'isi-freon-full-dari-kosong-r32-r410a',
-                'type' => ServiceType::UNIT,
-                'price' => 250000,
-                'description' => 'Vakum sistem pendingin, periksa kebocoran nepel/pipa, dan isi freon murni dari kondisi kosong hingga penuh.',
-                'is_active' => true,
-                'sort_order' => 12,
+                'nama' => 'Instalasi Listrik',
+                'slug' => 'instalasi-listrik',
+                'catatan_harga' => 'Tarif menyesuaikan kondisi instalasi di lokasi dan dikonfirmasi teknisi sebelum pekerjaan dimulai.',
+                'pekerjaan' => [
+                    ['instalasi-listrik-ac', 'Instalasi listrik AC', 'unit', true],
+                ],
             ],
             [
-                'name' => 'Pasang AC Baru / Bekas (0.5 - 1.5 PK)',
-                'slug' => 'pasang-ac-baru-bekas-05-15-pk',
-                'type' => ServiceType::UNIT,
-                'price' => 250000,
-                'description' => 'Instalasi rapi unit indoor & outdoor, proses vakum instalasi pipa berstandar SNI, serta pengetesan fungsi.',
-                'is_active' => true,
-                'sort_order' => 13,
+                'nama' => 'Tambah Freon',
+                'slug' => 'tambah-freon',
+                'catatan_harga' => null,
+                'pekerjaan' => [
+                    ['tambah-freon-split-05-1-pk', 'Split 0,5–1 PK', 'unit', false],
+                    ['tambah-freon-split-15-2-pk', 'Split 1,5–2 PK', 'unit', false],
+                    ['tambah-freon-cassette-standing-floor', 'Cassette/Standing Floor', 'unit', false],
+                    ['isi-freon-flushing', 'Isi Freon + Flushing', 'unit', false],
+                ],
             ],
             [
-                'name' => 'Bongkar Pasang AC (Relokasi)',
-                'slug' => 'bongkar-pasang-ac-relokasi',
-                'type' => ServiceType::UNIT,
-                'price' => 375000,
-                'description' => 'Pump down penguncian freon, pembongkaran aman di lokasi lama, dan pemasangan kembali di lokasi baru.',
-                'is_active' => true,
-                'sort_order' => 14,
-            ],
-            [
-                'name' => 'Perbaikan Kebocoran Air / Pipa Mampet',
-                'slug' => 'perbaikan-kebocoran-air-pipa-mampet',
-                'type' => ServiceType::UNIT,
-                'price' => 120000,
-                'description' => 'Mengatasi AC menetes atau banjir ke dalam ruangan, flushing lumut di selang drain, serta pembetulan kemiringan talang air.',
-                'is_active' => true,
-                'sort_order' => 15,
-            ],
-            [
-                'name' => 'Pengecekan Kerusakan / Troubleshooting',
-                'slug' => 'pengecekan-kerusakan-troubleshooting',
-                'type' => ServiceType::UNIT,
-                'price' => 75000,
-                'description' => 'Diagnosa menyeluruh komponen elektrikal, modul PCB, kapasitor, dan kompresor jika AC mati atau berisik.',
-                'is_active' => true,
-                'sort_order' => 16,
+                'nama' => 'Service dan Perbaikan AC',
+                'slug' => 'service-dan-perbaikan-ac',
+                'catatan_harga' => 'Tarif menyesuaikan tingkat kerusakan. Penggantian sparepart dibayar terpisah setelah dicek teknisi dan disetujui pelanggan.',
+                'pekerjaan' => [
+                    ['reparasi-ringan', 'Reparasi ringan (service modul ringan, ganti sensor, thermistor, dan lainnya)', 'unit', true],
+                    ['ganti-kapasitor-overload', 'Ganti kapasitor/overload', 'unit', true],
+                    ['vacuum-flushing-instalasi-lebih-dari-15-pk', 'Vacuum + Flushing instalasi unit lebih dari 1,5 PK', 'unit', true],
+                ],
             ],
         ];
-
-        foreach ($services as $data) {
-            Service::updateOrCreate(
-                ['slug' => $data['slug']],
-                $data
-            );
-        }
     }
 }

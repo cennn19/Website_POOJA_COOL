@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CancelOrderRequest;
 use App\Http\Requests\RejectOrderRequest;
+use App\Http\Requests\RescheduleOrderRequest;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\BookingSchedule;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +19,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
+    /** Tipe file bukti bayar yang boleh ditampilkan (sama dengan aturan unggah). */
+    private const PROOF_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
     /**
      * Tampilkan daftar pesanan dengan filter status, pencarian, dan paginasi.
      */
@@ -23,11 +29,13 @@ class OrderController extends Controller
     {
         $query = Order::query()->with(['items', 'latestPayment']);
 
-        if ($request->filled('status')) {
-            $statusEnum = OrderStatus::tryFrom($request->status);
-            if ($statusEnum) {
-                $query->where('status', $statusEnum);
-            }
+        $statusEnum = $request->filled('status') ? OrderStatus::tryFrom($request->status) : null;
+
+        if ($statusEnum) {
+            $query->where('status', $statusEnum);
+        } elseif (! $request->boolean('tampilkan_batal')) {
+            // Default: pesanan dibatalkan disembunyikan dari daftar.
+            $query->where('status', '!=', OrderStatus::DIBATALKAN);
         }
 
         if ($request->filled('q')) {
@@ -42,12 +50,13 @@ class OrderController extends Controller
         $orders = $query->latest()->paginate(15)->withQueryString();
 
         $counts = [
-            'total' => Order::count(),
+            'total' => Order::where('status', '!=', OrderStatus::DIBATALKAN)->count(),
             'menunggu_pembayaran' => Order::where('status', OrderStatus::MENUNGGU_PEMBAYARAN)->count(),
             'menunggu_verifikasi' => Order::where('status', OrderStatus::MENUNGGU_VERIFIKASI)->count(),
             'disetujui' => Order::where('status', OrderStatus::DISETUJUI)->count(),
             'ditolak' => Order::where('status', OrderStatus::DITOLAK)->count(),
             'selesai' => Order::where('status', OrderStatus::SELESAI)->count(),
+            'dibatalkan' => Order::where('status', OrderStatus::DIBATALKAN)->count(),
         ];
 
         return view('admin.orders.index', compact('orders', 'counts'));
@@ -56,11 +65,12 @@ class OrderController extends Controller
     /**
      * Tampilkan detail pesanan untuk verifikasi admin.
      */
-    public function show(Order $order): View
+    public function show(Order $order, BookingSchedule $schedule): View
     {
-        $order->load(['items.service', 'payments.verifier']);
+        $order->load(['items.service', 'payments.verifier', 'logs.user']);
+        $sessions = $schedule->sessions();
 
-        return view('admin.orders.show', compact('order'));
+        return view('admin.orders.show', compact('order', 'sessions'));
     }
 
     /**
@@ -71,7 +81,7 @@ class OrderController extends Controller
         try {
             $order->approve($request->user());
 
-            return back()->with('success', "Pesanan {$order->code} berhasil disetujui!");
+            return back()->with('success', "Pesanan {$order->code} berhasil disetujui. Kabari pelanggan lewat tombol WhatsApp di bawah.");
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -85,7 +95,7 @@ class OrderController extends Controller
         try {
             $order->reject($request->user(), $request->validated('reason'));
 
-            return back()->with('success', "Bukti pembayaran pesanan {$order->code} telah ditolak.");
+            return back()->with('success', "Bukti pembayaran pesanan {$order->code} telah ditolak. Kabari pelanggan lewat tombol WhatsApp di bawah.");
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -99,9 +109,42 @@ class OrderController extends Controller
         try {
             $order->complete($request->user());
 
-            return back()->with('success', "Pesanan {$order->code} telah ditandai selesai.");
+            return back()->with('success', "Pesanan {$order->code} telah ditandai selesai. Kabari pelanggan lewat tombol WhatsApp di bawah.");
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Batalkan pesanan secara manual (wajib alasan).
+     */
+    public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
+    {
+        try {
+            $order->cancel($request->user(), $request->validated('alasan_batal'));
+
+            return back()->with('success', "Pesanan {$order->code} telah dibatalkan. Kabari pelanggan lewat tombol WhatsApp di bawah.");
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Ubah tanggal & sesi kunjungan. Kuota dicek kecuali admin mencentang "paksa".
+     */
+    public function reschedule(RescheduleOrderRequest $request, Order $order): RedirectResponse
+    {
+        try {
+            $order->reschedule(
+                $request->user(),
+                $request->validated('jadwal_tanggal'),
+                $request->validated('jadwal_sesi'),
+                $request->boolean('paksa'),
+            );
+
+            return back()->with('success', "Jadwal pesanan {$order->code} berhasil diubah. Kabari pelanggan lewat tombol WhatsApp di bawah.");
+        } catch (DomainException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -110,10 +153,23 @@ class OrderController extends Controller
      */
     public function streamProof(Payment $payment): StreamedResponse
     {
-        if (! Storage::disk('private')->exists($payment->proof_path)) {
+        $disk = Storage::disk('private');
+
+        if (! $disk->exists($payment->proof_path)) {
             abort(404, 'File bukti transfer tidak ditemukan.');
         }
 
-        return Storage::disk('private')->response($payment->proof_path);
+        // Hanya kirim jika isinya benar-benar gambar yang diizinkan (dicek dari isi file,
+        // bukan nama file), agar file berbahaya tidak pernah dirender browser.
+        $mime = $disk->mimeType($payment->proof_path);
+        abort_unless(in_array($mime, self::PROOF_MIME_TYPES, true), 404);
+
+        return $disk->response($payment->proof_path, null, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

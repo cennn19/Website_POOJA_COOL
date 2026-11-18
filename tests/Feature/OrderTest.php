@@ -41,15 +41,18 @@ class OrderTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Jl. Mawar No. 12, Jakarta',
             'schedule_date' => now()->addDays(2)->format('Y-m-d'),
+            'sesi' => 'pagi',
             'notes' => 'AC di lantai 2',
             'items' => [
                 [
+                    'kategori_id' => $service1->kategori_layanan_id,
                     'service_id' => $service1->id,
                     'qty' => 2, // 2 * 75.000 = 150.000
                     'price' => 1, // Harga palsu dari request, HARUS diabaikan server
                     'subtotal' => 2, // Subtotal palsu dari request, HARUS diabaikan
                 ],
                 [
+                    'kategori_id' => $service2->kategori_layanan_id,
                     'service_id' => $service2->id,
                     'qty' => 1, // 1 * 150.000 = 150.000
                     'price' => 9999999, // Nilai manipulasi
@@ -72,6 +75,8 @@ class OrderTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $order->unique_code);
         $this->assertLessThanOrEqual(999, $order->unique_code);
         $this->assertEquals($order->subtotal + $order->unique_code, $order->total);
+        $this->assertEquals($order->unique_code, $order->kode_unik_aktif);
+        $this->assertEquals('pagi', $order->sesi);
         $this->assertEquals(OrderStatus::MENUNGGU_PEMBAYARAN, $order->status);
 
         // Check snapshot values in order_items
@@ -79,7 +84,7 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('order_items', [
             'order_id' => $order->id,
             'service_id' => $service1->id,
-            'service_name' => 'Cuci AC Split',
+            'service_name' => $service1->kategori->nama.' – Cuci AC Split',
             'qty' => 2,
             'price_at_order' => 75000,
             'subtotal' => 150000,
@@ -87,7 +92,7 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('order_items', [
             'order_id' => $order->id,
             'service_id' => $service2->id,
-            'service_name' => 'Tambah Freon R32',
+            'service_name' => $service2->kategori->nama.' – Tambah Freon R32',
             'qty' => 1,
             'price_at_order' => 150000,
             'subtotal' => 150000,
@@ -106,17 +111,22 @@ class OrderTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Jl. Melati No. 5',
             'schedule_date' => now()->addDay()->format('Y-m-d'),
+            'sesi' => 'pagi',
             'items' => [
                 [
+                    'kategori_id' => $inactiveService->kategori_layanan_id,
                     'service_id' => $inactiveService->id,
                     'qty' => 1,
                 ],
             ],
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->withoutExceptionHandling();
-        $this->post(route('order.store'), $payload);
+        $response = $this->post(route('order.store'), $payload);
+
+        // Tidak boleh error 500: kembali ke form dengan pesan yang jelas.
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('items.0.service_id');
+        $this->assertDatabaseCount('orders', 0);
     }
 
     public function test_order_fails_if_quantity_is_invalid(): void
@@ -131,8 +141,10 @@ class OrderTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Jl. Melati No. 5',
             'schedule_date' => now()->addDay()->format('Y-m-d'),
+            'sesi' => 'pagi',
             'items' => [
                 [
+                    'kategori_id' => $service->kategori_layanan_id,
                     'service_id' => $service->id,
                     'qty' => 0, // qty must be min 1
                 ],
@@ -147,8 +159,10 @@ class OrderTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Jl. Melati No. 5',
             'schedule_date' => now()->addDay()->format('Y-m-d'),
+            'sesi' => 'pagi',
             'items' => [
                 [
+                    'kategori_id' => $service->kategori_layanan_id,
                     'service_id' => $service->id,
                     'qty' => 50, // max is 20
                 ],

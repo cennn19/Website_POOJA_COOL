@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Dimatikan: route /storage/{path} tidak dipakai, dan disk ini berbagi folder
+            // dengan bukti bayar. Bukti bayar hanya disajikan lewat route admin yang dilindungi login.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

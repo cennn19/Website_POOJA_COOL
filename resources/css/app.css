@@ -3,25 +3,91 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
+/*
+ * Palet solid — REVISIDESIGN.md §2.
+ * Tanpa gradien, blob, glow, atau shadow berwarna.
+ * Nama kelas lama (ink, mist, fog, steel, ...) dipertahankan sebagai alias
+ * supaya layout lama tidak berubah, hanya warnanya.
+ */
 @theme {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-heading: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-    --color-primary-50: #EFF8FF;
-    --color-primary-100: #DBEFFE;
-    --color-primary-500: #1D9BF0;
-    --color-primary-600: #0B7FD1;
-    --color-primary-700: #0A66A8;
-    --color-primary-900: #0B2F4A;
+    /* Token utama */
+    --color-white: #FFFFFF;
+    --color-ice: #E3F2FB;
+    --color-blue: #1771B8;
+    --color-blue-hover: #125E9A;
+    --color-navy: #0F2A44;
+    --color-slate: #5B6B7A;
+    --color-line: #D6E3EC;
 
-    --color-accent-500: #F97316;
-    --color-accent-600: #EA580C;
+    /* Status — khusus admin & halaman status pesanan */
+    --color-st-pending: #C98A12;
+    --color-st-approved: #1E8A5A;
+    --color-st-rejected: #C23B3B;
 
-    --color-neutral-50: #F8FAFC;
-    --color-neutral-200: #E2E8F0;
-    --color-neutral-600: #475569;
-    --color-neutral-900: #0F172A;
+    /* Alias lama → palet baru */
+    --color-ink: #0F2A44;        /* navy: heading, teks utama, tombol gelap */
+    --color-ink-soft: #0F2A44;   /* body tetap navy */
+    --color-ink-mute: #5B6B7A;   /* slate: teks sekunder */
+    --color-paper: #FFFFFF;
+    --color-mist: #E3F2FB;       /* ice: area info */
+    --color-fog: #E3F2FB;        /* ice: section selang-seling */
+    --color-subtext: #5B6B7A;
+    --color-steel-300: #1771B8;
+    --color-steel-500: #1771B8;
+    --color-steel-600: #125E9A;
+    --color-success: #1E8A5A;
+    --color-warning: #C98A12;
+    --color-danger: #C23B3B;
 
-    --color-success-600: #16A34A;
-    --color-warning-500: #F59E0B;
-    --color-danger-600: #DC2626;
+    --radius-panel: 28px;
+    --tracking-tightest: -0.03em;
+}
+
+@layer base {
+    body {
+        color: var(--color-navy);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading);
+        color: var(--color-navy);
+        letter-spacing: var(--tracking-tightest);
+        line-height: 1.1;
+        font-weight: 500;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-blue);
+        outline-offset: 2px;
+    }
+}
+
+/* Muncul saat scroll: fade + naik 12px, sekali saja. */
+@media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 250ms ease-out, transform 250ms ease-out;
+    }
+
+    .js [data-reveal].is-revealed {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
 }

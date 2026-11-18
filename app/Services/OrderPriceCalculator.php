@@ -10,7 +10,7 @@ class OrderPriceCalculator
     /**
      * Hitung ulang total pesanan secara aman berdasarkan harga resmi di database.
      *
-     * @param  array<array{service_id: int|string, qty: int|string}>  $itemsInput
+     * @param  array<array{service_id: int|string, qty: int|string, kategori_id?: int|string}>  $itemsInput
      * @param  int|null  $uniqueCode  Opsional, jika null akan di-generate acak (1-999)
      * @return array{
      *     items: array<array{
@@ -32,8 +32,10 @@ class OrderPriceCalculator
         }
 
         $serviceIds = array_column($itemsInput, 'service_id');
-        $services = Service::whereIn('id', $serviceIds)
-            ->where('is_active', true)
+        // Hanya layanan yang bisa dipesan: aktif, harga sudah diisi (> 0), kategori aktif.
+        $services = Service::bookable()
+            ->with('kategori')
+            ->whereIn('id', $serviceIds)
             ->get()
             ->keyBy('id');
 
@@ -53,13 +55,17 @@ class OrderPriceCalculator
                 throw new InvalidArgumentException("Layanan dengan ID {$serviceId} tidak ditemukan atau sedang tidak aktif.");
             }
 
+            if (isset($item['kategori_id']) && (int) $item['kategori_id'] !== (int) $service->kategori_layanan_id) {
+                throw new InvalidArgumentException('Jenis pekerjaan tidak sesuai dengan kategori yang dipilih.');
+            }
+
             $itemPrice = (int) $service->price;
             $itemSubtotal = $itemPrice * $qty;
             $subtotal += $itemSubtotal;
 
             $calculatedItems[] = [
                 'service_id' => $service->id,
-                'service_name' => $service->name,
+                'service_name' => $service->fullName(),
                 'qty' => $qty,
                 'price_at_order' => $itemPrice,
                 'subtotal' => $itemSubtotal,

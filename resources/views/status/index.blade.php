@@ -1,14 +1,21 @@
 @extends('layouts.app')
 
+@section('title', 'Cek Status Pesanan')
+@section('description', 'Lacak status pesanan dan pembayaran service AC Anda di POOJA COOL dengan kode order.')
+
 @section('content')
-<div class="py-8 md:py-14 bg-neutral-50 min-h-screen">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
+<div class="py-12 md:py-20 bg-paper min-h-screen">
+    <div class="max-w-[720px] mx-auto px-4 space-y-8">
         <!-- Search Card -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-4">
-            <div class="space-y-1">
-                <span class="text-primary-600 font-semibold text-xs uppercase tracking-wider">Lacak Pesanan</span>
-                <h1 class="text-xl sm:text-2xl font-bold text-neutral-900">Cek Status Pesanan AC Anda</h1>
-                <p class="text-xs text-neutral-500">Masukkan kode order unik yang Anda dapatkan saat memesan (Contoh: HVC-XXXXXXXX).</p>
+        <div class="bg-mist rounded-2xl p-6 sm:p-8 space-y-4">
+            <div>
+                <span class="text-xs uppercase tracking-[0.12em] text-ink-mute font-medium block mb-1">LACAK PESANAN</span>
+                <h1 class="text-2xl sm:text-3xl font-heading font-medium text-ink leading-tight">
+                    Cek Status Pesanan AC Anda
+                </h1>
+                <p class="text-xs text-ink-soft mt-1">
+                    Masukkan kode order unik yang Anda terima saat memesan (Contoh: HVC-XXXXXXXX).
+                </p>
             </div>
 
             <form method="GET" action="{{ route('order.status') }}" class="flex flex-col sm:flex-row gap-3 pt-2">
@@ -17,82 +24,89 @@
                         type="text"
                         name="code"
                         value="{{ $searchedCode ?? '' }}"
-                        placeholder="Masukkan Kode Order (Contoh: HVC-12345678)"
+                        placeholder="Contoh: HVC-12345678"
                         required
-                        class="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-500/20 text-neutral-900 font-mono tracking-wider uppercase text-base placeholder:normal-case placeholder:font-sans"
+                        class="w-full px-4 h-12 min-h-[48px] rounded-xl border-0 bg-paper text-ink font-mono uppercase tracking-wider text-sm placeholder:normal-case placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-ink"
                     />
                 </div>
-                <button
-                    type="submit"
-                    class="px-6 py-3 rounded-xl font-bold text-white bg-primary-600 hover:bg-primary-700 transition flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm min-h-[44px]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Cari Pesanan</span>
-                </button>
+                <x-button type="submit" variant="primary" size="md">
+                    CARI PESANAN
+                </x-button>
             </form>
         </div>
 
         @if ($searchedCode && ! $order)
-            <div class="bg-white rounded-3xl p-8 border border-neutral-200 text-center space-y-3">
-                <div class="w-12 h-12 rounded-2xl bg-rose-50 text-danger-600 flex items-center justify-center mx-auto">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </div>
-                <h2 class="text-lg font-bold text-neutral-900">Pesanan Tidak Ditemukan</h2>
-                <p class="text-sm text-neutral-600 max-w-md mx-auto">
-                    Tidak ada pesanan dengan kode <span class="font-mono font-bold text-neutral-900">{{ $searchedCode }}</span>. Mohon periksa kembali ejaan kode Anda atau hubungi layanan pelanggan kami via WhatsApp.
+            <!-- Not Found State -->
+            <div class="bg-mist rounded-2xl p-8 text-center space-y-3">
+                <span class="text-xs uppercase tracking-[0.12em] text-danger font-medium block">TIDAK DITEMUKAN</span>
+                <h2 class="text-lg font-heading font-medium text-ink">Pesanan Tidak Ditemukan</h2>
+                <p class="text-xs text-ink-soft max-w-sm mx-auto leading-relaxed">
+                    Tidak ada pesanan dengan kode <span class="font-mono font-semibold text-ink">{{ $searchedCode }}</span>. Mohon periksa kembali kode Anda atau hubungi layanan pelanggan via WhatsApp.
                 </p>
                 <div class="pt-2">
-                    <x-button href="https://wa.me/6281234567890" target="_blank" variant="secondary" size="sm">
-                        Bantuan Customer Service
+                    <x-button href="{{ \App\Support\WhatsApp::adminLink('Halo Admin '.config('usaha.nama').', saya tidak menemukan pesanan dengan kode '.$searchedCode.'. Mohon bantuannya.') }}" target="_blank" rel="noopener noreferrer" variant="secondary" size="sm">
+                        HUBUNGI CUSTOMER SERVICE
                     </x-button>
                 </div>
             </div>
         @elseif ($order)
-            <!-- Order Details Result -->
-            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-8">
-                <!-- Header Info -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-6">
+            <!-- Single Centralized Order Status Card -->
+            <div class="bg-mist rounded-2xl p-6 sm:p-8 space-y-8">
+                <!-- Header with Status Badge -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-6">
                     <div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Kode:</span>
-                            <span class="text-lg font-extrabold text-primary-900 font-mono tracking-wider">{{ $order->code }}</span>
-                        </div>
-                        <h2 class="text-xl font-bold text-neutral-900 mt-1">Status Progres Layanan</h2>
-                        <span class="text-xs text-neutral-500">Dibuat pada {{ $order->created_at->translatedFormat('d F Y, H:i') }} WIB</span>
+                        <span class="text-xs uppercase tracking-[0.12em] text-ink-mute font-medium block">
+                            KODE PESANAN &bull; {{ $order->code }}
+                        </span>
+                        <h2 class="text-2xl font-heading font-medium text-ink mt-1">
+                            Status Progres Layanan
+                        </h2>
+                        <span class="text-xs text-ink-mute">Dipesan pada {{ $order->created_at->translatedFormat('d F Y, H:i') }} WIB</span>
                     </div>
 
-                    <div class="shrink-0 flex items-center gap-3">
+                    <div class="shrink-0">
                         <x-status-badge :status="$order->status" size="lg" />
                     </div>
                 </div>
 
-                <!-- Rejection Alert & Action if rejected -->
-                @if ($order->status->value === 'ditolak')
-                    <div class="p-5 rounded-2xl bg-rose-50 border border-rose-200 space-y-3">
-                        <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-danger-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <div class="flex-1 space-y-1">
-                                <h3 class="text-sm font-bold text-rose-950">Bukti Pembayaran Ditolak oleh Admin</h3>
-                                <p class="text-xs text-rose-900 leading-relaxed">
-                                    Catatan Admin: "<strong>{{ $order->latestPayment?->note ?? 'Bukti pembayaran tidak sesuai atau tidak valid.' }}</strong>"
-                                </p>
-                            </div>
+                <!-- Cancelled Alert -->
+                @if ($order->status->value === 'dibatalkan')
+                    <div class="p-4 rounded-xl bg-paper border border-line space-y-1.5">
+                        <div class="text-xs font-semibold text-ink uppercase tracking-wider">
+                            Pesanan Dibatalkan
                         </div>
-                        <div class="pt-1">
-                            <x-button href="{{ route('payment.show', ['code' => $order->code]) }}" variant="accent" size="sm">
-                                Upload Ulang Bukti Pembayaran
+                        <p class="text-sm text-ink leading-relaxed">
+                            Alasan: {{ $order->alasan_batal ?? '-' }}
+                        </p>
+                        @if ($order->dibatalkan_pada)
+                            <p class="text-xs text-ink-mute">Dibatalkan pada {{ $order->dibatalkan_pada->translatedFormat('d F Y, H:i') }} WIB</p>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Rejection Alert -->
+                @if ($order->status->value === 'ditolak')
+                    <div class="p-4 rounded-xl bg-danger/5 border border-danger/20 space-y-2">
+                        <div class="text-xs font-semibold text-danger uppercase tracking-wider">
+                            Bukti Pembayaran Ditolak oleh Admin
+                        </div>
+                        <p class="text-xs text-ink-soft leading-relaxed">
+                            Alasan: "{{ $order->latestPayment?->note ?? 'Bukti pembayaran tidak sesuai nominal atau tidak valid.' }}"
+                        </p>
+                        @if ($order->latestPayment?->verified_at)
+                            <p class="text-xs text-ink-soft leading-relaxed">
+                                Unggah ulang paling lambat {{ $order->latestPayment->verified_at->copy()->addHours((int) config('booking.kedaluwarsa_jam', 24))->translatedFormat('d F Y, H:i') }} WIB, atau pesanan dibatalkan otomatis.
+                            </p>
+                        @endif
+                        <div class="pt-2">
+                            <x-button href="{{ route('payment.show', ['code' => $order->code]) }}" variant="primary" size="sm">
+                                UNGGAH ULANG BUKTI BAYAR
                             </x-button>
                         </div>
                     </div>
                 @endif
 
-                <!-- Visual 4-Step Timeline -->
+                <!-- Thin Vertical Timeline -->
                 @php
                     $status = $order->status->value;
                     $hasProof = $order->payments()->exists();
@@ -103,110 +117,112 @@
                 @endphp
 
                 <div class="space-y-4">
-                    <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wider">Timeline Proses</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <span class="text-xs uppercase tracking-[0.12em] text-ink-mute font-medium block">TIMELINE PENGERJAAN</span>
+
+                    <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-line">
                         <!-- Step 1 -->
-                        <div class="p-4 rounded-2xl border {{ $step1 ? 'border-primary-500 bg-primary-50/50' : 'border-neutral-200 bg-white' }} space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">✓</span>
-                                <span class="text-xs font-bold text-neutral-900">1. Pesanan Dibuat</span>
-                            </div>
-                            <p class="text-[11px] text-neutral-500">Layanan & jadwal tersimpan.</p>
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 w-3 h-3 rounded-full {{ $step1 ? 'bg-ink' : 'bg-steel-300' }} ring-4 ring-mist"></span>
+                            <h3 class="text-sm font-medium text-ink">Pesanan Dibuat</h3>
+                            <p class="text-xs text-ink-soft mt-0.5">Rincian layanan dan tanggal kunjungan tersimpan di sistem.</p>
                         </div>
 
                         <!-- Step 2 -->
-                        <div class="p-4 rounded-2xl border {{ $step2 ? 'border-primary-500 bg-primary-50/50' : 'border-neutral-200 bg-white' }} space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full {{ $step2 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-600' }} font-bold text-xs flex items-center justify-center">
-                                    {{ $step2 ? '✓' : '2' }}
-                                </span>
-                                <span class="text-xs font-bold text-neutral-900">2. Pembayaran</span>
-                            </div>
-                            <p class="text-[11px] text-neutral-500">
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 w-3 h-3 rounded-full {{ $step2 ? 'bg-ink' : ($status === 'menunggu_pembayaran' ? 'bg-steel-300' : 'bg-line') }} ring-4 ring-mist"></span>
+                            <h3 class="text-sm font-medium text-ink">Pembayaran & Bukti Transfer</h3>
+                            <p class="text-xs text-ink-soft mt-0.5">
                                 @if ($status === 'menunggu_pembayaran')
-                                    Menunggu unggah bukti.
+                                    Menunggu Anda mengunggah bukti pembayaran.
                                 @elseif ($status === 'ditolak')
-                                    Bukti ditolak.
+                                    Bukti ditolak. Silakan unggah ulang.
                                 @else
-                                    Bukti terunggah.
+                                    Bukti pembayaran telah berhasil diunggah.
                                 @endif
                             </p>
                         </div>
 
                         <!-- Step 3 -->
-                        <div class="p-4 rounded-2xl border {{ $step3 ? 'border-primary-500 bg-primary-50/50' : 'border-neutral-200 bg-white' }} space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full {{ $step3 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-600' }} font-bold text-xs flex items-center justify-center">
-                                    {{ $step3 ? '✓' : '3' }}
-                                </span>
-                                <span class="text-xs font-bold text-neutral-900">3. Diverifikasi</span>
-                            </div>
-                            <p class="text-[11px] text-neutral-500">
-                                {{ $step3 ? 'Admin telah menyetujui.' : 'Pemeriksaan mutasi admin.' }}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 w-3 h-3 rounded-full {{ $step3 ? 'bg-ink' : ($status === 'menunggu_verifikasi' ? 'bg-steel-300' : 'bg-line') }} ring-4 ring-mist"></span>
+                            <h3 class="text-sm font-medium text-ink">Verifikasi Admin</h3>
+                            <p class="text-xs text-ink-soft mt-0.5">
+                                {{ $step3 ? 'Pembayaran telah disetujui oleh admin.' : 'Admin sedang mencocokkan mutasi rekening Anda.' }}
                             </p>
                         </div>
 
                         <!-- Step 4 -->
-                        <div class="p-4 rounded-2xl border {{ $step4 ? 'border-primary-500 bg-primary-50/50' : 'border-neutral-200 bg-white' }} space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-6 h-6 rounded-full {{ $step4 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-600' }} font-bold text-xs flex items-center justify-center">
-                                    {{ $step4 ? '✓' : '4' }}
-                                </span>
-                                <span class="text-xs font-bold text-neutral-900">4. Teknisi Selesai</span>
-                            </div>
-                            <p class="text-[11px] text-neutral-500">
-                                {{ $step4 ? 'Pekerjaan tuntas.' : 'Kunjungan & pengerjaan.' }}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 w-3 h-3 rounded-full {{ $step4 ? 'bg-ink' : ($step3 ? 'bg-steel-300' : 'bg-line') }} ring-4 ring-mist"></span>
+                            <h3 class="text-sm font-medium text-ink">Kunjungan Teknisi Selesai</h3>
+                            <p class="text-xs text-ink-soft mt-0.5">
+                                {{ $step4 ? 'Teknisi telah menyelesaikan seluruh pekerjaan di lokasi.' : 'Teknisi akan hadir sesuai tanggal kunjungan.' }}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Order and Customer Information Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-100 text-sm">
-                    <!-- Customer and Schedule -->
-                    <div class="space-y-3 p-5 rounded-2xl bg-neutral-50 border border-neutral-200">
-                        <h4 class="font-bold text-neutral-900">Informasi Pemesan & Kunjungan</h4>
-                        <div class="space-y-1.5 text-xs text-neutral-700">
-                            <div><span class="text-neutral-500">Nama Pelanggan:</span> <strong class="text-neutral-900">{{ $order->name }}</strong></div>
-                            <div><span class="text-neutral-500">Nomor Telepon:</span> {{ $order->phone }}</div>
-                            <div><span class="text-neutral-500">Tanggal Kunjungan:</span> <strong class="text-primary-700">{{ $order->schedule_date->translatedFormat('d F Y') }}</strong></div>
-                            <div><span class="text-neutral-500">Alamat:</span> {{ $order->address }}</div>
-                            @if ($order->notes)
-                                <div><span class="text-neutral-500">Catatan:</span> {{ $order->notes }}</div>
-                            @endif
+                <!-- Customer Details & Items Snapshot -->
+                <div class="pt-6 border-t border-line space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs uppercase tracking-[0.12em] text-ink-mute font-medium block">INFORMASI KUNJUNGAN</span>
+                        <span class="text-[11px] text-ink-mute">Data pribadi disamarkan demi keamanan</span>
+                    </div>
+
+                    <div class="bg-paper rounded-xl p-5 border border-line space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-ink-mute">Nama Pemesan:</span>
+                            <span class="font-medium text-ink">{{ mask_name($order->name) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-ink-mute">WhatsApp / Telp:</span>
+                            <span class="font-medium text-ink font-mono">{{ mask_phone($order->phone) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-ink-mute">Tanggal Kunjungan:</span>
+                            <span class="font-medium text-ink text-right">{{ $order->schedule_date->translatedFormat('l, d F Y') }}@if ($order->sesiLabel())<br><span class="text-ink-mute font-normal">Sesi {{ $order->sesiLabel() }}</span>@endif</span>
+                        </div>
+                        <div class="pt-2 border-t border-line/60">
+                            <span class="text-ink-mute block mb-0.5">Alamat Kunjungan:</span>
+                            <span class="text-ink leading-relaxed">{{ mask_address($order->address) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services List & Total -->
+                <div class="pt-4 border-t border-line space-y-4">
+                    <span class="text-xs uppercase tracking-[0.12em] text-ink-mute font-medium block">RINCIAN BIAYA</span>
+
+                    <div class="bg-paper rounded-xl p-5 border border-line space-y-3 text-xs">
+                        <div class="divide-y divide-line/60">
+                            @foreach ($order->items as $item)
+                                <div class="py-2 first:pt-0 flex items-center justify-between">
+                                    <span class="text-ink">{{ $item->service_name }} ({{ $item->qty }} {{ $item->service?->satuan ?? 'unit' }})</span>
+                                    <span class="font-medium text-ink">{{ format_rupiah($item->subtotal) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="pt-2 border-t border-line flex items-center justify-between text-ink-mute">
+                            <span>Kode Unik Verifikasi:</span>
+                            <span>+{{ format_rupiah($order->unique_code) }}</span>
+                        </div>
+
+                        <div class="pt-2 border-t border-line flex items-baseline justify-between">
+                            <span class="text-xs uppercase tracking-wider text-ink-mute font-medium">TOTAL DIBAYAR:</span>
+                            <span class="text-2xl font-heading font-medium text-ink">{{ format_rupiah($order->total) }}</span>
                         </div>
                     </div>
 
-                    <!-- Items & Payment Total -->
-                    <div class="space-y-3 p-5 rounded-2xl bg-neutral-50 border border-neutral-200">
-                        <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-neutral-900">Layanan Dipesan</h4>
-                            <span class="text-xs text-neutral-500">{{ $order->items->count() }} jenis</span>
-                        </div>
-                        <div class="space-y-2 text-xs divide-y divide-neutral-200/60">
-                            @foreach ($order->items as $item)
-                                <div class="pt-1.5 first:pt-0 flex items-center justify-between">
-                                    <span>{{ $item->service_name }} ({{ $item->qty }}x)</span>
-                                    <span class="font-semibold text-neutral-900">{{ format_rupiah($item->subtotal) }}</span>
-                                </div>
-                            @endforeach
-                            <div class="pt-2 flex items-center justify-between text-neutral-600">
-                                <span>Kode Unik QRIS:</span>
-                                <span>+{{ format_rupiah($order->unique_code) }}</span>
-                            </div>
-                            <div class="pt-2 flex items-center justify-between text-sm font-bold text-neutral-900">
-                                <span>Total Tagihan:</span>
-                                <span class="text-primary-900 text-base font-extrabold">{{ format_rupiah($order->total) }}</span>
-                            </div>
-                        </div>
-
+                    <div class="pt-2 flex flex-col sm:flex-row gap-3">
                         @if ($order->status->value === 'menunggu_pembayaran')
-                            <div class="pt-2">
-                                <x-button href="{{ route('payment.show', ['code' => $order->code]) }}" variant="accent" size="sm" class="w-full">
-                                    Buka Halaman Pembayaran QRIS
-                                </x-button>
-                            </div>
+                            <x-button href="{{ route('payment.show', ['code' => $order->code]) }}" variant="primary" size="md" class="w-full sm:flex-1">
+                                BUKA HALAMAN PEMBAYARAN
+                            </x-button>
                         @endif
+                        <x-button href="{{ \App\Support\WhatsApp::adminLink('Halo Admin '.config('usaha.nama').', saya ingin menanyakan pesanan dengan kode '.$order->code.'.') }}" target="_blank" rel="noopener noreferrer" variant="secondary" size="md" class="w-full sm:flex-1">
+                            TANYA ADMIN VIA WHATSAPP
+                        </x-button>
                     </div>
                 </div>
             </div>

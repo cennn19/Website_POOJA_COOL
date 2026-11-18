@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Order;
+use App\Support\PaymentMethods;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -11,15 +12,17 @@ use Illuminate\View\View;
 class PaymentController extends Controller
 {
     /**
-     * Tampilkan halaman pembayaran QRIS dan form upload bukti bayar.
+     * Tampilkan halaman pembayaran (QRIS, transfer bank, e-wallet) dan form upload bukti bayar.
      */
     public function show(string $code): View
     {
         $order = Order::where('code', $code)
-            ->with(['items', 'latestPayment'])
+            ->with(['items.service.kategori', 'latestPayment'])
             ->firstOrFail();
 
-        return view('payment.index', compact('order'));
+        $paymentGroups = PaymentMethods::grouped();
+
+        return view('payment.index', compact('order', 'paymentGroups'));
     }
 
     /**
@@ -38,7 +41,7 @@ class PaymentController extends Controller
             $file = $request->file('proof');
             $path = $file->store('payments', 'private');
 
-            $order->recordPaymentProof($path);
+            $order->recordPaymentProof($path, $request->validated('payment_method'));
 
             return redirect()
                 ->route('payment.show', ['code' => $order->code])

@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Hasil build deploy (berisi .env produksi & kredensial)
+/deploy/build

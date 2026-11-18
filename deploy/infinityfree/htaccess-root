@@ -1,0 +1,49 @@
+# .htaccess untuk htdocs/ (InfinityFree)
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # --- Keamanan -----------------------------------------------------------
+    # Folder aplikasi (berisi .env, kode, dan bukti bayar pelanggan) tidak boleh diakses publik.
+    RewriteRule ^laravel(/.*)?$ - [F,L]
+
+    # File/folder tersembunyi (.env, .git, .htaccess, ...) ditolak,
+    # kecuali .well-known (dipakai untuk validasi sertifikat SSL).
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule (^|/)\. - [F,L]
+
+    # --- Laravel ------------------------------------------------------------
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Lapisan cadangan bila mod_rewrite tidak aktif: tolak file sensitif berdasarkan nama.
+<FilesMatch "^(\.env.*|composer\.(json|lock)|artisan|.*\.sql|.*\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PaymentMethods;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UploadPaymentProofRequest extends FormRequest
 {
@@ -23,6 +25,7 @@ class UploadPaymentProofRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'payment_method' => ['required', 'string', Rule::in(PaymentMethods::keys())],
             'proof' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
@@ -35,6 +38,8 @@ class UploadPaymentProofRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'payment_method.required' => 'Pilih metode pembayaran yang Anda gunakan.',
+            'payment_method.in' => 'Metode pembayaran tidak tersedia. Silakan pilih metode lain.',
             'proof.required' => 'File bukti transfer wajib diunggah.',
             'proof.image' => 'File yang diunggah harus berupa gambar.',
             'proof.mimes' => 'Format file yang didukung hanya JPG, JPEG, PNG, dan WEBP.',

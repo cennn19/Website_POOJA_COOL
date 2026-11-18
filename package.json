@@ -17,6 +17,7 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "@anthropic-ai/claude-code": "^2.1.325",
         "alpinejs": "^3.17.5"
     }
 }

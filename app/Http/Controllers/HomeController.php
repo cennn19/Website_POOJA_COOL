@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Service;
+use App\Models\KategoriLayanan;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -12,12 +12,10 @@ class HomeController extends Controller
      */
     public function index(): View
     {
-        $featuredServices = Service::active()
-            ->orderBy('sort_order')
-            ->take(6)
-            ->get();
+        // Daftar harga per kategori. Pekerjaan yang harganya belum diisi (0) tidak tampil.
+        $kategoriLayanan = KategoriLayanan::katalog();
 
-        return view('pages.home', compact('featuredServices'));
+        return view('pages.home', compact('kategoriLayanan'));
     }
 
     /**
