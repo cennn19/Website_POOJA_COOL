@@ -48,9 +48,12 @@ return [
             'report' => false,
         ],
 
+        // Langsung di folder publik (public/storage) agar tidak butuh `storage:link`:
+        // hosting seperti InfinityFree tidak mengizinkan symlink. Jangan simpan file rahasia
+        // di disk ini; bukti bayar tetap di disk "private" dan disajikan lewat route admin.
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => public_path('storage'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
@@ -83,8 +86,7 @@ return [
     |
     */
 
-    'links' => [
-        public_path('storage') => storage_path('app/public'),
-    ],
+    // Kosong: disk "public" sudah menulis langsung ke public/storage, jadi tidak perlu symlink.
+    'links' => [],
 
 ];
