@@ -28,3 +28,5 @@ Thumbs.db
 
 # Hasil build deploy (berisi .env produksi & kredensial)
 /deploy/build
+deploy.local
+database.sql
